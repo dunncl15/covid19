@@ -1,38 +1,127 @@
 .App {
-  text-align: center;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.ctrl-panel {
+  position: absolute;
+  top: 25px;
+  right: 50px;
+  width: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.date {
+  color: #333;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.slider-wrapper {
+  height: 48px;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  padding: 0 10px;
+}
+
+.rangeslider-horizontal {
+  width: 92%;
+}
+
+.rangeslider-horizontal .rangeslider__handle {
+  border-radius: 3px !important;
+  width: 13px !important;
+}
+
+.rangeslider-horizontal .rangeslider__handle::after {
+  content: none !important;
+}
+
+.play-pause-btn {
+  box-sizing: border-box;
+  height: 20px;
+  border-color: transparent transparent transparent #333;
+  transition: 100ms all ease;
+  will-change: border-width;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 10px 0 10px 20px;
+  outline: none;
+}
+
+.play-pause-btn.pause {
+  border-style: double;
+  border-width: 0px 0 0px 15px;
+}
+
+.legend {
+  position: absolute;
+  bottom: 35px;
+  right: 10px;
+  background-color: #fff;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  padding: 15px;
+  width: 150px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  height: 15px;
+  margin: 5px 0;
+}
+
+.step {
+  height: 13px;
+  width: 13px;
+  border-radius: 3px;
+  margin-right: 15px;
+}
+
+.step.first {
+  height: 12px;
+  width: 12px;
+  border: 1px solid #333;
+  background-color: #fff;
+}
+
+.step.second {
+  background-color: #f1f1cd;
+}
+
+.step.third {
+  background-color: #eed78d;
+}
+
+.step.fourth {
+  background-color: #f3c11b;
+}
+
+.step.fifth {
+  background-color: #da9c20;
+}
+
+.step.sixth {
+  background-color: #cf8124;
+}
+
+.step.seventh {
+  background-color: #cb682c;
+}
+
+.step.eigth {
+  background-color: #7b2320;
+}
+
+.step.nineth {
+  background-color: #591302;
 }

@@ -4,24 +4,51 @@ import moment from "moment";
 import Slider from "react-rangeslider";
 import "react-rangeslider/lib/index.css";
 
-// import csv from "csvtojson";
+import Legend from "./Legend";
 import { statesData } from "./data/stateGeoData";
 
 const Map = () => {
+  const [viewport, setViewport] = useState({
+    latitude: 48.60288590594354,
+    longitude: -95.60336648930755,
+    pitch: 15,
+    zoom: 3,
+    width: "100vw",
+    height: "100vh"
+  });
   const timeoutRef = useRef(null);
-  const origin = 20200304;
+  const origin = 20200304; // First day API data is available
   const today = Number(moment().format("YYYYMMDD"));
+  const [date, setDate] = useState(today);
+
   const [playing, setPlaying] = useState(false);
-  const [date, setDate] = useState(
-    Number(
-      moment(today, "YYYYMMDD")
-        .subtract(1, "days")
-        .format("YYYYMMDD")
-    )
-  );
+  // Todo: utilize maxValue for meaningful data steps
   const [maxValue, setMaxValue] = useState(0);
-  const [data, setData] = useState(null);
+  const [hasLatestData, setHasLatestData] = useState(false);
+  const [dailyData, setDailyData] = useState(null);
+  const [totalData, setTotalData] = useState({});
   const [popup, setPopup] = useState(null);
+
+  useEffect(() => {
+    // Check if today's data has been published yet
+    if (date === today) {
+      fetch(`https://covidtracking.com/api/states/daily?date=${today}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            setDate(
+              Number(
+                moment(date, "YYYYMMDD")
+                  .subtract(1, "days")
+                  .format("YYYYMMDD")
+              )
+            );
+          } else {
+            setHasLatestData(true);
+          }
+        });
+    }
+  }, [date, today]);
 
   useEffect(() => {
     fetch(`https://covidtracking.com/api/states/daily?date=${date}`)
@@ -32,20 +59,28 @@ const Map = () => {
       })
       .then(data => {
         if (!data.error) {
-          const maxValue = Math.max(...data.map(d => d.positive));
+          // const maxValue = Math.max(...data.map(d => d.positive));
           const dataMap = data.reduce((acc, row) => {
             acc[row.state] = row;
             return acc;
           }, {});
-          setData(dataMap);
+          setDailyData(dataMap);
           // setMaxValue(maxValue);
         }
+      });
+
+    fetch(`https://covidtracking.com/api/us/daily?date=${date}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          return;
+        }
+        setTotalData({ cases: data.positive, deaths: data.death });
       });
   }, [date]);
 
   useEffect(() => {
     if (date === today) {
-      console.log("STOP: ", date, today);
       setPlaying(false);
       clearTimeout(timeoutRef.current);
     }
@@ -65,29 +100,42 @@ const Map = () => {
 
   let mergedData;
 
-  if (data && statesData) {
+  if (dailyData && statesData) {
     mergedData = {
       ...statesData,
       features: statesData.features.map(row => {
-        const covidData = data[row.id] || { positive: 0 };
+        const covidData = dailyData[row.id] || { positive: 0 };
         return { ...row, properties: { ...row.properties, ...covidData } };
       })
     };
   }
 
+  const handlePlayToggle = () => {
+    const latest = hasLatestData
+      ? today
+      : Number(
+          moment(today, "YYYYMMDD")
+            .subtract(1, "days")
+            .format("YYYYMMDD")
+        );
+    let dateToSet;
+    if (playing) {
+      dateToSet = date;
+    } else {
+      dateToSet = date === latest ? origin : date;
+    }
+    setDate(dateToSet);
+    setPlaying(playing => !playing);
+  };
+
   return (
     <ReactMapGL
+      {...viewport}
+      onViewportChange={setViewport}
       className="mapContainer"
-      latitude={48.60288590594354}
-      longitude={-95.60336648930755}
-      pitch={25}
-      zoom={3}
-      width="100%"
-      height="100%"
-      mapboxApiAccessToken="pk.eyJ1IjoiZHVubmNsMTUiLCJhIjoiY2sxNnd6Mm56MWFrNzNjbnh4OG0yY3E2aSJ9.TQ-FNfFCZVE40-yKv1ADaw"
+      mapboxApiAccessToken={process.env.REACT_APP_MAP_TOKEN}
       onClick={e => {
         const [lng, lat] = e.lngLat;
-        console.log({ lat, lng });
         const data = e.features.find(f => f.layer.id === "states-join");
         if (data) setPopup({ ...data.properties, lng, lat });
       }}
@@ -142,25 +190,43 @@ const Map = () => {
         </Source>
       )}
       <div className="ctrl-panel">
-        <h2 className="date">
+        <h3 className="date">
           {moment(date, "YYYY-MM-DD").format("MMMM Do, YYYY")}
-        </h2>
+        </h3>
+        <div className="stats">
+          <p>
+            Total cases: <strong>{totalData.cases}</strong>
+          </p>
+          <p>
+            Total fatalities: <strong>{totalData.deaths || 0}</strong>
+          </p>
+        </div>
         <div className="slider-wrapper">
           <button
             className={playing ? "play-pause-btn pause" : "play-pause-btn"}
-            onClick={() => {
-              setDate(origin);
-              setPlaying(playing => !playing);
-            }}
+            onClick={handlePlayToggle}
           />
           <Slider
             min={origin}
-            max={Number(today)}
+            max={
+              hasLatestData
+                ? today
+                : Number(
+                    moment(today, "YYYYMMDD")
+                      .subtract(1, "days")
+                      .format("YYYYMMDD")
+                  )
+            }
             value={date}
             onChange={val => setDate(val)}
             tooltip={false}
           />
         </div>
+        {!hasLatestData && (
+          <span className="data-notice">
+            * Today's data will be updated b/w 4pm - 5pm EST
+          </span>
+        )}
       </div>
       <Legend />
     </ReactMapGL>
@@ -168,52 +234,3 @@ const Map = () => {
 };
 
 export default Map;
-
-const Legend = () => {
-  return (
-    <div className="legend">
-      <div className="legend-row">
-        <span className="step first" /> 0
-      </div>
-      <div className="legend-row">
-        <span className="step second" /> 1-100
-      </div>
-      <div className="legend-row">
-        <span className="step third" /> 101-500
-      </div>
-      <div className="legend-row">
-        <span className="step fourth" /> 501-1000
-      </div>
-      <div className="legend-row">
-        <span className="step fifth" /> 1001-2000
-      </div>
-      <div className="legend-row">
-        <span className="step sixth" /> 2001-5000
-      </div>
-      <div className="legend-row">
-        <span className="step seventh" /> 5001-10,000
-      </div>
-      <div className="legend-row">
-        <span className="step eigth" /> 10,001-20,000
-      </div>
-      <div className="legend-row">
-        <span className="step nineth" /> > 20,000
-      </div>
-    </div>
-  );
-};
-
-// fetch(
-//   "https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv"
-// )
-//   .then(res => {
-//     if (res.ok) {
-//       return res.blob();
-//     }
-//   })
-//   .then(async data => {
-//     const csvData = await data.text();
-//     const json = await csv().fromString(csvData);
-//     console.log(json);
-//   })
-//   .catch(err => console.log("err: ", err));

@@ -9,10 +9,10 @@ import { statesData } from "./data/stateGeoData";
 
 const Map = () => {
   const [viewport, setViewport] = useState({
-    latitude: 48.60288590594354,
-    longitude: -95.60336648930755,
+    latitude: 50.10798253156572,
+    longitude: -107.88684615827016,
     pitch: 15,
-    zoom: 3,
+    zoom: 3.199513301307515,
     width: "100vw",
     height: "100vh"
   });
@@ -38,7 +38,7 @@ const Map = () => {
           if (data.error) {
             setDate(
               Number(
-                moment(date, "YYYYMMDD")
+                moment(today, "YYYYMMDD")
                   .subtract(1, "days")
                   .format("YYYYMMDD")
               )
@@ -51,7 +51,7 @@ const Map = () => {
   }, [date, today]);
 
   useEffect(() => {
-    fetch(`https://covidtracking.com/api/states/daily?date=${date}`)
+    fetch(`https://covidtracking.com/api/states/daily`)
       .then(res => {
         if (res.ok) {
           return res.json();
@@ -61,23 +61,32 @@ const Map = () => {
         if (!data.error) {
           // const maxValue = Math.max(...data.map(d => d.positive));
           const dataMap = data.reduce((acc, row) => {
-            acc[row.state] = row;
-            return acc;
+            // build state object by date { AK: { 20200331: {...} } }
+            return {
+              ...acc,
+              [row.state]: {
+                ...acc[row.state],
+                [row.date]: row
+              }
+            };
           }, {});
           setDailyData(dataMap);
           // setMaxValue(maxValue);
         }
       });
 
-    fetch(`https://covidtracking.com/api/us/daily?date=${date}`)
+    fetch(`https://covidtracking.com/api/us/daily`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
-          return;
+          return null;
         }
-        setTotalData({ cases: data.positive, deaths: data.death });
+        const totalData = data.reduce((acc, row) => {
+          return { ...acc, [row.date]: row };
+        }, {});
+        setTotalData(totalData);
       });
-  }, [date]);
+  }, []);
 
   useEffect(() => {
     if (date === today) {
@@ -104,11 +113,13 @@ const Map = () => {
     mergedData = {
       ...statesData,
       features: statesData.features.map(row => {
-        const covidData = dailyData[row.id] || { positive: 0 };
+        const covidData = dailyData[row.id][`${date}`] || { positive: 0 };
         return { ...row, properties: { ...row.properties, ...covidData } };
       })
     };
   }
+
+  console.log(mergedData);
 
   const handlePlayToggle = () => {
     const latest = hasLatestData
@@ -195,10 +206,10 @@ const Map = () => {
         </h3>
         <div className="stats">
           <p>
-            Total cases: <strong>{totalData.cases}</strong>
+            Total cases: <strong>{totalData[date]?.positive || 0}</strong>
           </p>
           <p>
-            Total fatalities: <strong>{totalData.deaths || 0}</strong>
+            Total fatalities: <strong>{totalData[date]?.death || 0}</strong>
           </p>
         </div>
         <div className="slider-wrapper">

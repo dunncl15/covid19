@@ -71,6 +71,7 @@
   box-sizing: border-box;
   height: 20px;
   border-color: transparent transparent transparent #333;
+  background-color: transparent;
   transition: 100ms all ease;
   will-change: border-width;
   cursor: pointer;

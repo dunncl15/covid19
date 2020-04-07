@@ -1,7 +1,6 @@
 import React from "react";
 
 const Legend = ({ steps, colorSteps }) => {
-  console.log(colorSteps);
   return (
     <div className="legend">
       <div className="range">

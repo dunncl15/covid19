@@ -116,6 +116,8 @@ const Map = () => {
       onViewportChange={setViewport}
       className="mapContainer"
       mapboxApiAccessToken={process.env.REACT_APP_MAP_TOKEN}
+      width="100%"
+      height="100%"
       onClick={(e) => {
         const [lng, lat] = e.lngLat;
         const data = e.features.find((f) => f.layer.id === "states-join");

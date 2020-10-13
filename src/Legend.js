@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react';
 
 const Legend = ({ steps, colorSteps }) => {
   return (
     <div className="legend">
       <div className="range">
         <span>{Math.min(...steps)}</span>
-        <span># of positive cases</span>
+        <span>daily positive case increase</span>
         <span>{Math.max(...steps)}+</span>
       </div>
       <div className="color-range">

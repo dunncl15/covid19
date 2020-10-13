@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
-import ReactMapGL, { Source, Layer, Popup } from "react-map-gl";
-import moment from "moment";
-import Slider from "react-rangeslider";
-import "react-rangeslider/lib/index.css";
-import * as d3 from "d3-scale-chromatic";
+import React, { useState, useEffect, useRef } from 'react';
+import ReactMapGL, { Source, Layer, Popup } from 'react-map-gl';
+import moment from 'moment';
+import Slider from 'react-rangeslider';
+import 'react-rangeslider/lib/index.css';
+import * as d3 from 'd3-scale-chromatic';
 
-import CustomMapController from "./MapController";
-import Legend from "./Legend";
-import { statesData } from "./data/stateGeoData";
+import CustomMapController from './MapController';
+import Legend from './Legend';
+import { statesData } from './data/stateGeoData';
 
 const colorSteps = d3.schemeOranges[9];
-const steps = [0, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
+const steps = [0, 20, 50, 100, 300, 500, 1000, 2000, 3000];
 
 const Map = () => {
   const [viewport, setViewport] = useState({
@@ -18,12 +18,12 @@ const Map = () => {
     longitude: -107.88684615827016,
     pitch: 15,
     zoom: 3.199513301307515,
-    width: "100vw",
-    height: "100vh",
+    width: '100vw',
+    height: '100vh',
   });
   const timeoutRef = useRef(null);
 
-  const today = Number(moment().format("YYYYMMDD"));
+  const today = Number(moment().format('YYYYMMDD'));
   const [playing, setPlaying] = useState(false);
   const [dailyData, setDailyData] = useState(null);
   const [totalData, setTotalData] = useState({});
@@ -32,7 +32,7 @@ const Map = () => {
   const [popup, setPopup] = useState(null);
 
   useEffect(() => {
-    fetch(`https://covidtracking.com/api/states/daily`)
+    fetch(`https://api.covidtracking.com/api/states/daily`)
       .then((res) => {
         if (res.ok) {
           return res.json();
@@ -54,7 +54,7 @@ const Map = () => {
         }
       });
 
-    fetch(`https://covidtracking.com/api/us/daily`)
+    fetch(`https://api.covidtracking.com/api/us/daily`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
@@ -103,7 +103,9 @@ const Map = () => {
     mergedData = {
       ...statesData,
       features: statesData.features.map((row) => {
-        const covidData = dailyData[row.id][`${date}`] || { positive: 0 };
+        const covidData = dailyData[row.id][`${date}`] || {
+          positiveIncrease: 0,
+        };
         return { ...row, properties: { ...row.properties, ...covidData } };
       }),
     };
@@ -120,7 +122,7 @@ const Map = () => {
       height="100%"
       onClick={(e) => {
         const [lng, lat] = e.lngLat;
-        const data = e.features.find((f) => f.layer.id === "states-join");
+        const data = e.features.find((f) => f.layer.id === 'states-join');
         if (data) setPopup({ ...data.properties, lng, lat });
       }}
     >
@@ -131,10 +133,12 @@ const Map = () => {
           onClose={() => setPopup(null)}
         >
           <h3>{popup.name}</h3>
+          <p>Data quality grade: {popup.dataQualityGrade || 'N/A'}</p>
+          <p>Positive increase (day/day): {popup.positiveIncrease}</p>
           <p>Positive cases: {popup.positive}</p>
           <p>
-            Last updated:{" "}
-            {moment(popup.dateChecked, "YYYY-MM-DD").format("MMMM Do, YYYY")}
+            Last updated:{' '}
+            {moment(popup.dateChecked, 'YYYY-MM-DD').format('MMMM Do, YYYY')}
           </p>
         </Popup>
       )}
@@ -145,13 +149,13 @@ const Map = () => {
             type="fill"
             source="states"
             paint={{
-              "fill-color": [
-                "interpolate",
-                ["linear"],
-                ["get", "positive"],
+              'fill-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'positiveIncrease'],
                 ...createSteps(),
               ],
-              "fill-opacity": 0.9,
+              'fill-opacity': 0.9,
             }}
             beforeId="waterway-label"
           />
@@ -159,7 +163,7 @@ const Map = () => {
       )}
       <div className="ctrl-panel">
         <h3 className="date">
-          {moment(date, "YYYY-MM-DD").format("MMMM Do, YYYY")}
+          {moment(date, 'YYYY-MM-DD').format('MMMM Do, YYYY')}
         </h3>
         <div className="stats">
           <p>
@@ -171,7 +175,7 @@ const Map = () => {
         </div>
         <div className="slider-wrapper">
           <button
-            className={playing ? "play-pause-btn pause" : "play-pause-btn"}
+            className={playing ? 'play-pause-btn pause' : 'play-pause-btn'}
             onClick={handlePlayToggle}
           />
           <Slider

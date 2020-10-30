@@ -8,6 +8,7 @@ import * as d3 from 'd3-scale-chromatic';
 import CustomMapController from './MapController';
 import Legend from './Legend';
 import { statesData } from './data/stateGeoData';
+import { formatNumber } from './utils';
 
 const colorSteps = d3.schemeOranges[9];
 const steps = [0, 20, 50, 100, 300, 500, 1000, 2000, 3000];
@@ -167,10 +168,12 @@ const Map = () => {
         </h3>
         <div className="stats">
           <p>
-            Total cases: <strong>{totalData[date]?.positive || 0}</strong>
+            Total cases:{' '}
+            <strong>{formatNumber(totalData[date]?.positive || 0)}</strong>
           </p>
           <p>
-            Total fatalities: <strong>{totalData[date]?.death || 0}</strong>
+            Total fatalities:{' '}
+            <strong>{formatNumber(totalData[date]?.death || 0)}</strong>
           </p>
         </div>
         <div className="slider-wrapper">
